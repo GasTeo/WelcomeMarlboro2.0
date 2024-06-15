@@ -1,0 +1,72 @@
+﻿@page
+@model TestAppWeb.Pages.ChatModel
+@{
+    ViewData["Title"] = "Чат";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalR Chat</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="mt-3">
+                    <p>Пользователь: <strong>@Model.UserName</strong>!</p>
+                    <input type="hidden" id="userName" value="@Model.UserName" />
+                </div>
+                <div id="inputForm" class="mt-3">
+                    <div class="input-group">
+                        <input type="text" id="message" class="form-control" placeholder="Введите сообщение...">
+                        <div class="input-group-append">
+                            <button id="sendBtn" class="btn btn-primary">Отправить</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="chatroom" class="mt-5">
+                    <!-- Здесь будут отображаться сообщения чата -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+ 
+
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chathub")
+            .build();
+
+        connection.start().then(function () {
+            console.log("Connected to hub.");
+        }).catch(function (err) {
+            return console.error(err.toString());
+        });
+
+        document.getElementById("sendBtn").addEventListener("click", function (e) {
+            const userName = document.getElementById("userName").value;
+            let message = document.getElementById("message").value.trim();
+            if (message !== "") {
+                connection.invoke("SendMessage", userName, message);
+                document.getElementById("message").value = ""; // Очищаем поле ввода после отправки
+            } else {
+                alert("Пожалуйста, введите сообщение перед отправкой.");
+            }
+            e.preventDefault();
+        });
+
+        connection.on("ReceiveMessage", function (user, message) {
+            const encodedMessage = user + " says: " + message;
+            const li = document.createElement("li");
+            li.textContent = encodedMessage;
+            document.getElementById("chatroom").appendChild(li);
+        });
+    </script>
+</body>
+</html>
